@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SIP — 100 Problem Sums (Input Answers)</title>
+<style>
+  :root{
+    --accent:#0b63d5;
+    --muted:#666;
+    --good:#c9f1d0;
+    --bad:#ffd6d6;
+    --card:#ffffff;
+    --bg:#f3f8ff;
+  }
+  html,body{height:100%;margin:0;}
+  body{
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    background:var(--bg);
+    color:#111;
+    padding:18px;
+    box-sizing:border-box;
+  }
+  header{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    margin-bottom:14px;
+  }
+  header img{height:54px; width:54px; object-fit:contain; border-radius:8px; background:white; padding:6px;}
+  h1{font-size:20px;margin:0;color:var(--accent);}
+  .controls{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0 18px;}
+  button{
+    background:var(--accent); color:white; border:0; padding:10px 14px;
+    border-radius:8px; cursor:pointer; font-weight:600;
+  }
+  button.ghost{background:transparent;color:var(--accent);border:2px solid var(--accent);}
+  #scoreBox{margin-left:8px; font-weight:700; color:#083a8a; align-self:center;}
+  main{display:block;}
+  .grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+  }
+  .column{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .card{
+    background:var(--card);
+    border-radius:10px;
+    padding:10px;
+    box-shadow:0 1px 4px rgba(20,30,60,0.06);
+    break-inside:avoid;
+  }
+  .qnum{font-weight:700;color:var(--muted); font-size:13px; display:inline-block; width:30px;}
+  .qtext{font-size:16px; display:inline-block; vertical-align:middle; margin-left:6px;}
+  .ansBox{
+    width:110px; padding:6px; font-size:15px; border-radius:6px; border:1px solid #ccc;
+  }
+  #resultsPanel{margin-top:16px; padding:12px; background:white; border-left:5px solid var(--accent); border-radius:8px; display:none; max-height:50vh; overflow:auto;}
+  .solutions{margin-top:12px;}
+  .sol{padding:8px;border-radius:6px;margin-bottom:6px;}
+  .sol.correct{background:var(--good);}
+  .sol.incorrect{background:var(--bad);}
+  footer{margin-top:18px; font-size:13px; color:var(--muted);}
+  @media(max-width:900px){
+    .grid{grid-template-columns:1fr;}
+    header img{height:46px;width:46px;}
+  }
+  /* Print tweaks */
+  @media print {
+    .controls, footer { display: none; }
+    body { padding: 6mm; }
+    .grid { gap: 8px; }
+    .card { page-break-inside: avoid; }
+    #resultsPanel { display:block; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <img src="" alt="logo" id="logoPlaceholder">
+  <div>
+    <h1>SIP Problem Sums — 100 Questions</h1>
+    <div style="font-size:13px;color:var(--muted)">Class-2 / Contest style — mixed + - × ÷</div>
+  </div>
+  <div style="margin-left:auto;display:flex;align-items:center;">
+    <div id="scoreBox">Not yet attempted</div>
+  </div>
+</header>
+
+<div class="controls">
+  <button id="btnCheck">Check Answers</button>
+  <button id="btnReset" class="ghost">New Set (Regenerate)</button>
+  <button id="btnShowSol" class="ghost">Show Solutions</button>
+  <button id="btnDownload" class="ghost">Print / Save as PDF</button>
+</div>
+
+<main id="mainArea">
+  <div class="grid" id="gridArea">
+    <div class="column" id="colLeft"></div>
+    <div class="column" id="colRight"></div>
+  </div>
+
+  <div id="resultsPanel">
+    <div id="summaryText"></div>
+    <div class="solutions" id="solutions"></div>
+  </div>
+</main>
+
+<footer>
+  Tip: Use the "New Set" button to regenerate a different combination. This page is static and works offline.
+</footer>
+
+<script>
+/* 100 SIP problem sums — input answer version
+   The question set is fixed (from user's requested 100) but regenerate re-shuffles order.
+*/
+
+// Original question list (100) with computed correct answers
+const ORIGINAL = [
+  {q:"Riya has 15 balloons. She gives 4 to her friend. How many balloons are left?", a:11},
+  {q:"There are 25 apples in a basket. 12 more apples are added. How many apples now?", a:37},
+  {q:"A spider has 8 legs. How many legs do 6 spiders have?", a:48},
+  {q:"A box has 20 chocolates. 10 are eaten. How many chocolates remain?", a:10},
+  {q:"There are 5 birds on each of 7 branches. How many birds in total?", a:35},
+  {q:"A pencil costs ₹6. Arjun buys 5 pencils. How much does he spend?", a:30},
+  {q:"A pack has 30 candies. 5 children share equally. How many candies each?", a:6},
+  {q:"A truck carries 45 sacks. It drops 18 sacks. How many still on the truck?", a:27},
+  {q:"A book has 12 stickers on each page. There are 4 pages. Total stickers?", a:48},
+  {q:"Mita collects 28 shells. She gives 9 to her brother. How many left?", a:19},
+  {q:"There are 9 boxes with 6 marbles each. How many marbles altogether?", a:54},
+  {q:"Rohan reads 14 pages on Monday and 17 on Tuesday. Total pages?", a:31},
+  {q:"42 birds sit on a tree. 19 fly away. How many remain?", a:23},
+  {q:"Each car has 4 wheels. How many wheels on 9 cars?", a:36},
+  {q:"A rope is 50 cm long. Ramu cuts 25 cm. How much is left?", a:25},
+  {q:"There are 6 rows of chairs with 7 chairs each. Total chairs?", a:42},
+  {q:"Tara had ₹80. She bought a book for ₹35. How much money left?", a:45},
+  {q:"A farmer plucks 21 mangoes in the morning and 26 in evening. Total?", a:47},
+  {q:"A toy box has 32 blocks. 7 are lost. How many blocks are left?", a:25},
+  {q:"10 bags with 5 kilograms rice each. Total kilograms?", a:50},
+  {q:"There are 18 goals scored. Team A scores 7. How many by Team B?", a:11},
+  {q:"A sticker sheet has 9 stickers. Rita buys 7 sheets. Total stickers?", a:63},
+  {q:"63 students go on a trip. 21 go by car. How many go by bus?", a:42},
+  {q:"A shop sells 8 ice-creams each hour. How many in 6 hours?", a:48},
+  {q:"There are 30 pencils. Teacher gives 5 pencils each to students. How many students get pencils?", a:6},
+  {q:"A train has 6 coaches with 10 seats each. Total seats?", a:60},
+  {q:"55 bananas in a crate. 20 are sold. How many left?", a:35},
+  {q:"A book has 5 chapters. Each chapter has 8 pages. Total pages?", a:40},
+  {q:"27 children are in a park. 14 go home. How many left in park?", a:13},
+  {q:"A carton has 36 eggs. Put 6 eggs in each tray. How many trays needed?", a:6},
+  {q:"There are 7 flower pots with 9 flowers each. Total flowers?", a:63},
+  {q:"Meena had 48 balloons. 16 burst. How many left?", a:32},
+  {q:"6 teams. Each team has 11 players. Total players?", a:66},
+  {q:"A bag has 60 toffees. Share equally among 10 kids. Each kid gets?", a:6},
+  {q:"29 birds on a wall. 13 more come. Total birds?", a:42},
+  {q:"A notebook costs ₹15. How much do 4 notebooks cost?", a:60},
+  {q:"45 fish in a pond. 19 get caught. Remaining fish?", a:26},
+  {q:"Each table has 4 legs. How many legs do 12 tables have?", a:48},
+  {q:"9 packets with 5 biscuits each. Total biscuits?", a:45},
+  {q:"73 books in a shelf. 41 removed. How many left?", a:32},
+  {q:"A pencil box has 22 pencils. Add 17 more. Total pencils?", a:39},
+  {q:"There are 24 balls. Pack 6 per bag. How many bags needed?", a:4},
+  {q:"10 cats catch 3 rats each. Total rats caught?", a:30},
+  {q:"58 chocolates. 29 eaten. Left with?", a:29},
+  {q:"Each child gets 8 stickers. There are 7 children. Total stickers?", a:56},
+  {q:"65 students in school bus. 23 get down. How many remain?", a:42},
+  {q:"13 boxes with 4 markers each. Total markers?", a:52},
+  {q:"A team scores 36 runs in first inning and 28 in second. Total?", a:64},
+  {q:"72 carrots. Pack in 9 bags equally. Carrots per bag?", a:8},
+  {q:"A necklace has 9 beads. How many beads in 7 necklaces?", a:63},
+  {q:"There are 90 crayons. 45 are used. Remaining crayons?", a:45},
+  {q:"Each duck has 2 legs. How many legs on 15 ducks?", a:30},
+  {q:"A farmer has 48 eggs. Put 8 eggs in each tray. Trays needed?", a:6},
+  {q:"Alex buys 26 candies. He eats 14. How many left?", a:12},
+  {q:"A baker makes 9 cakes per batch. 6 batches made. Total cakes?", a:54},
+  {q:"81 pineapples. Share equally among 9 sellers. Each gets?", a:9},
+  {q:"A shop sells 34 pens, then 16 more pens. Total sold?", a:50},
+  {q:"8 kids have 7 balloons each. Total balloons?", a:56},
+  {q:"44 kites fly in sky. 19 fall down. How many flying?", a:25},
+  {q:"Each bus seat has 1 pupil. 50 seats. Filled seats?", a:50},
+  {q:"20 packets of chips. Each packet costs ₹10. Total cost?", a:200},
+  {q:"110 toffees shared among 10 kids. Each gets?", a:11},
+  {q:"37 fish in tank. Add 23 more. Total fish?", a:60},
+  {q:"7 rabbits with 2 ears each. Total ears?", a:14},
+  {q:"66 pencils shared among 6 children. Each gets?", a:11},
+  {q:"99 marbles. 45 lost. How many remain?", a:54},
+  {q:"6 shelves with 9 books each. Total books?", a:54},
+  {q:"70 apples in basket. 28 sold. How many left?", a:42},
+  {q:"12 packets with 8 chips each. Total chips?", a:96},
+  {q:"16 bats with 3 balls each. Total balls?", a:48},
+  {q:"There are 88 stickers. 44 are used. How many stickers left?", a:44},
+  {q:"A room has 5 tables. Each table has 4 chairs. Total chairs?", a:20},
+  {q:"63 candies. Pack 9 in each box. Boxes needed?", a:7},
+  {q:"55 flowers. 20 plucked for pooja. Left?", a:35},
+  {q:"11 bags with 7 potatoes each. Total potatoes?", a:77},
+  {q:"48 students. 12 absent. Present students?", a:36},
+  {q:"Each spider has 8 legs. How many legs on 11 spiders?", a:88},
+  {q:"42 mangoes. Divide among 6 kids. How many each?", a:7},
+  {q:"100 coins. 40 spent. Remaining coins?", a:60},
+  {q:"9 plates with 6 cupcakes each. Total cupcakes?", a:54},
+  {q:"72 children. 36 girls. How many boys?", a:36},
+  {q:"8 cows with 4 legs each. Total legs?", a:32},
+  {q:"96 balloons shared among 12 kids. Balloons each?", a:8},
+  {q:"39 pencils. Add 14. Total?", a:53},
+  {q:"51 marbles. 19 lost. Left?", a:32},
+  {q:"57 apples. Share among 3 friends equally. Each gets?", a:19},
+  {q:"22 crayons per box. How many in 4 boxes?", a:88},
+  {q:"25 comics. 9 given away. Left?", a:16},
+  {q:"64 chairs in hall. 32 removed. Remaining?", a:32},
+  {q:"13 rows with 5 seats each. Total seats?", a:65},
+  {q:"A packet has 45 gems. 15 eaten. Left?", a:30},
+  {q:"8 tables with 6 plates each. Plates needed?", a:48},
+  {q:"40 oranges. Divide among 5 boys. Each gets?", a:8},
+  {q:"90 notebooks. 30 used. Remaining?", a:60},
+  {q:"7 teams with 5 players each. Total players?", a:35},
+  {q:"18 litres juice shared among 6 children. Litres each?", a:3},
+  {q:"46 apples. Add 27. Total?", a:73},
+  {q:"87 stickers. 33 given away. How many left?", a:54},
+  {q:"6 bunches with 9 grapes each. Total grapes?", a:54},
+  {q:"54 chocolates shared equally among 6 kids. How many per kid?", a:9}
+];
+
+// current working set (we'll shuffle a copy so "New Set" reorders questions)
+let currentSet = [];
+
+// helper shuffle
+function shuffle(arr){
+  for(let i = arr.length-1; i>0; i--){
+    const j = Math.floor(Math.random() * (i+1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// build working set (shuffled copy)
+function buildSet(){
+  const copy = ORIGINAL.map(o => ({ q: o.q, a: o.a }));
+  return shuffle(copy);
+}
+
+// render two columns
+function render(set){
+  const left = document.getElementById('colLeft');
+  const right = document.getElementById('colRight');
+  left.innerHTML = ''; right.innerHTML = '';
+
+  const fragL = document.createDocumentFragment();
+  const fragR = document.createDocumentFragment();
+
+  for(let i=0;i<set.length;i++){
+    const item = set[i];
+    const card = document.createElement('div');
+    card.className = 'card';
+    const id = i+1;
+    card.innerHTML = `
+      <div>
+        <span class="qnum">${id}.</span>
+        <span class="qtext">${item.q}</span>
+      </div>
+      <div style="margin-top:8px;">
+        <input type="number" inputmode="numeric" class="ansBox" id="ans-${id}" aria-label="Answer for question ${id}">
+      </div>
+    `;
+    if(i % 2 === 0) fragL.appendChild(card); else fragR.appendChild(card);
+  }
+  left.appendChild(fragL);
+  right.appendChild(fragR);
+}
+
+// check answers and show results
+function checkAnswers(){
+  let score = 0;
+  const solDiv = document.getElementById('solutions');
+  solDiv.innerHTML = '';
+  for(let i=0;i<currentSet.length;i++){
+    const id = i+1;
+    const correct = currentSet[i].a;
+    const inp = document.getElementById(`ans-${id}`);
+    const raw = inp ? inp.value.trim() : '';
+    const parsed = raw === '' ? null : Number(raw);
+    const sol = document.createElement('div');
+    sol.className = 'sol';
+    if(parsed !== null && !Number.isNaN(parsed) && Number(parsed) === Number(correct)){
+      score++;
+      sol.classList.add('correct');
+      sol.innerHTML = `<strong>Q${id}</strong> — Your answer: <strong>${parsed}</strong> — ✅ Correct`;
+    } else {
+      sol.classList.add('incorrect');
+      sol.innerHTML = `<strong>Q${id}</strong> — Your answer: <em>${raw || 'No answer'}</em> — ❌ Correct: <strong>${correct}</strong>`;
+    }
+    solDiv.appendChild(sol);
+  }
+  document.getElementById('scoreBox').textContent = `Score: ${score} / ${currentSet.length}`;
+  document.getElementById('summaryText').innerHTML = `<strong>Result:</strong> You scored <strong>${score}</strong> out of <strong>${currentSet.length}</strong>.`;
+  document.getElementById('resultsPanel').style.display = 'block';
+  document.getElementById('resultsPanel').scrollIntoView({ behavior: 'smooth' });
+}
+
+// show solutions only (correct answers)
+function showSolutionsOnly(){
+  const solDiv = document.getElementById('solutions');
+  solDiv.innerHTML = '';
+  for(let i=0;i<currentSet.length;i++){
+    const id = i+1;
+    const correct = currentSet[i].a;
+    const sol = document.createElement('div');
+    sol.className = 'sol correct';
+    sol.innerHTML = `<strong>Q${id}:</strong> ${currentSet[i].q} <strong>${correct}</strong>`;
+    solDiv.appendChild(sol);
+  }
+  document.getElementById('summaryText').innerHTML = `<strong>All solutions</strong>`;
+  document.getElementById('resultsPanel').style.display = 'block';
+  document.getElementById('resultsPanel').scrollIntoView({ behavior: 'smooth' });
+}
+
+// regenerate (reshuffle questions)
+function regenerate(){
+  const anyFilled = Array.from(document.querySelectorAll('.ansBox')).some(i=>i.value.trim() !== '');
+  if(anyFilled){
+    if(!confirm('Generate a new random order of questions? Current answers will be lost.')) return;
+  }
+  currentSet = buildSet();
+  render(currentSet);
+  document.getElementById('resultsPanel').style.display = 'none';
+  document.getElementById('scoreBox').textContent = `Not yet attempted`;
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+// print
+function printPage(){ window.print(); }
+
+// wire buttons
+document.getElementById('btnCheck').addEventListener('click', checkAnswers);
+document.getElementById('btnReset').addEventListener('click', regenerate);
+document.getElementById('btnShowSol').addEventListener('click', showSolutionsOnly);
+document.getElementById('btnDownload').addEventListener('click', printPage);
+
+// initialize
+regenerate();
+
+</script>
+</body>
+</html>
